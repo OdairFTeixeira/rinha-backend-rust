@@ -1,22 +1,20 @@
 #[macro_use]
 extern crate diesel;
 
-use std::{env, net::SocketAddr};
 
-use actix_web::{middleware::Logger, App, HttpServer};
+
+use database::db::{get_pool, AppState, DbActor};
+use diesel::{
+    r2d2::{ConnectionManager, Pool},
+    PgConnection
+};
+use std::{env, net::SocketAddr};
+use actix::SyncArbiter;
+use actix_web::{middleware::Logger, web::Data, App, HttpServer};
 use dotenv::dotenv;
 
-mod handler;
-mod model;
-mod repository;
-mod schema;
-mod service;
-mod dto;
+mod database;
 
-use handler::client_handler::{
-    handle_transaction,
-    handle_extract,
-};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -24,6 +22,11 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
     dotenv().ok();
+
+    let db_url: String = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let pool: Pool<ConnectionManager<PgConnection>> = get_pool(&db_url);
+    let db_addr = SyncArbiter::start(5, move || DbActor(pool.clone()));
+
     let main_port: u16 = env::var("PORT")
         .expect("Port não definida no arquivo .env")
         .parse()
@@ -35,6 +38,7 @@ async fn main() -> std::io::Result<()> {
         let logger = Logger::default();
         
         App::new()
+            .app_data(Data::new(AppState { db: db_addr.clone() }))
             .wrap(logger)
             .service(handle_transaction)
             .service(handle_extract)
