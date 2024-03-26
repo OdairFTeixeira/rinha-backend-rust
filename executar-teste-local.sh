@@ -14,7 +14,7 @@ runGatling() {
 }
 
 startTest() {
-    for i in {1..20}; do
+    for i in {1..2}; do
         # 2 requests to wake the 2 api instances up :)
         curl --fail http://localhost:9999/clientes/1/extrato && \
         echo "" && \
@@ -23,6 +23,7 @@ startTest() {
         runGatling && \
         break || sleep 2;
     done
+    PGPASSWORD=postgres PGUSER=postgres PGHOST=localhost PGDATABASE=rinha_backend_rust psql -c "UPDATE clients SET balance = 0 WHERE 1=1; DELETE FROM transactions WHERE 1=1;"
 }
 
 startTest

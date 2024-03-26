@@ -15,6 +15,11 @@ services:
       - ./scripts/dml.sql:/docker-entrypoint-initdb.d/script-02.sql
     ports:
       - "5433:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.9"
+          memory: "300MB"
 
   rinha-backend-01:
     image: odairft/rinha-backend:v1.0
@@ -26,6 +31,11 @@ services:
       - PORT=3333
     ports:
       - 3333:3333
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "50MB"
 
   rinha-backend-02:
     image: odairft/rinha-backend:v1.0
@@ -37,6 +47,11 @@ services:
       - PORT=3334
     ports:
       - 3334:3334
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "50MB"
 
   nginx:
     image: nginx:latest
@@ -46,7 +61,12 @@ services:
       - rinha-backend-01
       - rinha-backend-02
     ports:
-      - "9999:9999" 
+      - "9999:9999"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "150MB" 
 
 networks:
   default:
